@@ -85,10 +85,15 @@ def process_command(command):
 		response_json = api_call("files/list?parent_id="+str(terminal_session["pwd_id"][-1]))
 		files = response_json["files"]
 		for file_info in files:
-			print file_info["name"]
+			if file_info["file_type"]==0:
+				print "[+]"+file_info["name"]
+			else:
+				print file_info["name"]
 	elif command == "cd":
 		cd_target = sys.argv[2]
 		if cd_target == "..":
+			if terminal_session["pwd_id"][-1]==0:
+				return
 			terminal_session["pwd"]=terminal_session["pwd"][:-1]
 			terminal_session["pwd_id"]=terminal_session["pwd_id"][:-1]
 		else:
