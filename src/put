@@ -9,6 +9,7 @@ config_file_path = os.path.expanduser("~/.put-cli/put-cli.json")
 sessions_path = os.path.expanduser("~/.put-cli/sessions/")
 access_token = ""
 terminal_session={}
+
 def check_config():
 	global access_token
 	if not os.path.exists(config_file_path):
@@ -96,6 +97,9 @@ def process_command(command):
 				return
 			terminal_session["pwd"]=terminal_session["pwd"][:-1]
 			terminal_session["pwd_id"]=terminal_session["pwd_id"][:-1]
+		elif cd_target == "/":
+			terminal_session["pwd"]=[]
+			terminal_session["pwd_id"]=[0]
 		else:
 			response_json = api_call("files/list?parent_id="+str(terminal_session["pwd_id"][-1]))
 			files = response_json["files"]
