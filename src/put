@@ -7,6 +7,7 @@ import urllib2
 
 config_file_path = os.path.expanduser("~/.put-cli/put-cli.json")
 sessions_path = os.path.expanduser("~/.put-cli/sessions/")
+autocomplete_path = os.path.expanduser("~/.put-cli/autocomplete/")
 access_token = ""
 terminal_session={}
 
@@ -56,6 +57,11 @@ def check_terminal_session():
 	else:
 		read_terminal_session(ppid)
 
+def check_autocomplete():
+	if not os.path.exists(autocomplete_path):
+		os.mkdir(autocomplete_path)
+	ppid = os.getppid()
+
 def api_call(path):
 	global access_token
 	if "?" not in path:
@@ -74,6 +80,17 @@ def api_call(path):
 			exit(1)
 	return response_json
 
+def escape_filename(filename):
+	for c in "\!\"$&'()*,:;<=>?@[]^`{|} ":
+		filename=filename.replace(c,"\\\\"+c)
+	return filename
+
+def dump_autocomplete(files):
+	ppid = os.getppid()
+	autocomplete_file = open(autocomplete_path+str(ppid),"w")
+	for file_info in files:
+		autocomplete_file.write(escape_filename(file_info["name"])+"\n")
+	autocomplete_file.close()
 
 def process_command(command):
 	global terminal_session
@@ -90,6 +107,7 @@ def process_command(command):
 				print "[+]"+file_info["name"]
 			else:
 				print file_info["name"]
+		dump_autocomplete(files)
 	elif command == "cd":
 		cd_target = sys.argv[2]
 		if cd_target == "..":
@@ -114,12 +132,15 @@ def process_command(command):
 			terminal_session["pwd"]=terminal_session["pwd"]+[cd_target]
 			terminal_session["pwd_id"]=terminal_session["pwd_id"]+[cd_target_id]
 		write_terminal_session()
+		response_json = api_call("files/list?parent_id="+str(terminal_session["pwd_id"][-1]))
+		dump_autocomplete(response_json["files"])
 	else:
 		print "Invalid command : "+command+". Please check usage using --help"
 	
 def main_routine():
 	check_config()
 	check_terminal_session()
+	check_autocomplete()
 	if len(sys.argv) < 2:
 		print "Please specify command:"
 		exit(0)

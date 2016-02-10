@@ -1,0 +1,15 @@
+_put_cli()
+{
+        local cur
+        local IFS=$'\n'
+        pid=$$
+        cur="${COMP_WORDS[COMP_CWORD]}"
+        COMPREPLY=()
+        if [ -f ~/.put-cli/autocomplete/$pid ];
+        then
+                COMPREPLY=($(compgen -W "$(cat ~/.put-cli/autocomplete/$pid)" -- ${cur}))
+        fi
+        return 0
+}
+complete -F _put_cli put
+
