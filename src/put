@@ -95,6 +95,19 @@ def dump_autocomplete(files):
 		autocomplete_file.write(escape_filename(file_info["name"])+"\n")
 	autocomplete_file.close()
 
+def get_folder_id(folder_name):
+	response_json = api_call("files/list?parent_id="+str(terminal_session["pwd_id"][-1]))
+	files = response_json["files"]
+	folder_id = -1
+
+	for file_info in files:
+		if file_info["name"]==folder_name and file_info["file_type"]==0:
+			folder_id = file_info["id"]
+			break
+
+	return folder_id
+
+
 def process_command(command):
 	global terminal_session
 	if command == "pwd":
@@ -103,7 +116,11 @@ def process_command(command):
 			output_string+=path+"/"
 		print output_string
 	elif command == "ls":
-		response_json = api_call("files/list?parent_id="+str(terminal_session["pwd_id"][-1]))
+		ls_target_id = get_folder_id(sys.argv[2]) if len(sys.argv) >=3 else terminal_session["pwd_id"][-1]
+		if ls_target_id == -1:
+			print "The folder name you entered does not exist"
+			exit(0)
+		response_json = api_call("files/list?parent_id=" + str(ls_target_id))
 		files = response_json["files"]
 		for file_info in files:
 			if file_info["file_type"]==0:
@@ -122,13 +139,7 @@ def process_command(command):
 			terminal_session["pwd"]=[]
 			terminal_session["pwd_id"]=[0]
 		else:
-			response_json = api_call("files/list?parent_id="+str(terminal_session["pwd_id"][-1]))
-			files = response_json["files"]
-			cd_target_id = -1
-			for file_info in files:
-				if file_info["name"]==cd_target and file_info["file_type"]==0:
-					cd_target_id = file_info["id"]
-					break
+			cd_target_id = get_folder_id(cd_target)
 			if cd_target_id == -1:
 				print "The folder name you entered does not exist"
 				exit(0)
