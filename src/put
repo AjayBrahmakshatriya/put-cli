@@ -73,6 +73,9 @@ def api_call(path):
 		if err.code == 400:
 			print "The access_token you have specified in "+config_file_path+" is not valid. Check the README to get the correct access_token"
 			exit(1)
+		else:
+			print "Some error occured while connecting to put.io server."
+			exit(1)
 	response_json = json.loads(response.read())
 	if response_json["status"] == "ERROR":
 		if response_json["error_type"] == "invalid_grant":
