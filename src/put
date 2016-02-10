@@ -72,7 +72,7 @@ def api_call(path):
 	except urllib2.HTTPError, err:
 		if err.code == 400:
 			print "The access_token you have specified in "+config_file_path+" is not valid. Check the README to get the correct access_token"
-			exit(1)	
+			exit(1)
 	response_json = json.loads(response.read())
 	if response_json["status"] == "ERROR":
 		if response_json["error_type"] == "invalid_grant":
@@ -109,7 +109,7 @@ def process_command(command):
 				print file_info["name"]
 		dump_autocomplete(files)
 	elif command == "cd":
-		cd_target = sys.argv[2]
+		cd_target = sys.argv[2] if len(sys.argv) >= 3 else '/'
 		if cd_target == "..":
 			if terminal_session["pwd_id"][-1]==0:
 				return
@@ -136,7 +136,7 @@ def process_command(command):
 		dump_autocomplete(response_json["files"])
 	else:
 		print "Invalid command : "+command+". Please check usage using --help"
-	
+
 def main_routine():
 	check_config()
 	check_terminal_session()
@@ -149,4 +149,3 @@ def main_routine():
 
 if __name__ == "__main__" :
 	main_routine()
-
