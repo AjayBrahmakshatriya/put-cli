@@ -95,8 +95,12 @@ def dump_autocomplete(files):
 		autocomplete_file.write(escape_filename(file_info["name"])+"\n")
 	autocomplete_file.close()
 
+def get_folder_list(folder_id):
+	response_json = api_call("files/list?parent_id=" + str(folder_id))
+	return response_json
+
 def get_folder_id(folder_name):
-	response_json = api_call("files/list?parent_id="+str(terminal_session["pwd_id"][-1]))
+	response_json = get_folder_list(terminal_session["pwd_id"][-1])
 	files = response_json["files"]
 	folder_id = -1
 
@@ -106,7 +110,6 @@ def get_folder_id(folder_name):
 			break
 
 	return folder_id
-
 
 def process_command(command):
 	global terminal_session
@@ -120,7 +123,7 @@ def process_command(command):
 		if ls_target_id == -1:
 			print "The folder name you entered does not exist"
 			exit(0)
-		response_json = api_call("files/list?parent_id=" + str(ls_target_id))
+		response_json = get_folder_list(ls_target_id)
 		files = response_json["files"]
 		for file_info in files:
 			if file_info["file_type"]==0:
@@ -146,7 +149,7 @@ def process_command(command):
 			terminal_session["pwd"]=terminal_session["pwd"]+[cd_target]
 			terminal_session["pwd_id"]=terminal_session["pwd_id"]+[cd_target_id]
 		write_terminal_session()
-		response_json = api_call("files/list?parent_id="+str(terminal_session["pwd_id"][-1]))
+		response_json = get_folder_list(terminal_session["pwd_id"][-1])
 		dump_autocomplete(response_json["files"])
 	else:
 		print "Invalid command : "+command+". Please check usage using --help"
