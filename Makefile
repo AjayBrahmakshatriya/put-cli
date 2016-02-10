@@ -1,11 +1,6 @@
 ROOT_DIR := `pwd`
-OS = $(shell uname)
 
-ifeq ($(OS),Linux)
-	TARGET := /usr/bin/put
-else ifeq ($(OS),Darwin)
-	TARGET := /usr/local/bin/put
-endif
+TARGET := /usr/local/bin/put
 
 all:
 	@mkdir -p build
