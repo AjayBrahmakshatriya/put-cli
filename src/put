@@ -4,7 +4,7 @@ import os
 import os.path
 import sys
 import urllib2
-
+import urllib
 config_file_path = os.path.expanduser("~/.put-cli/put-cli.json")
 sessions_path = os.path.expanduser("~/.put-cli/sessions/")
 autocomplete_path = os.path.expanduser("~/.put-cli/autocomplete/")
@@ -62,18 +62,24 @@ def check_autocomplete():
 		os.mkdir(autocomplete_path)
 	ppid = os.getppid()
 
-def api_call(path):
+def api_call(path,data={}):
 	global access_token
 	if "?" not in path:
 		path = path+"?"
 	path = "https://api.put.io/v2/"+path+"&oauth_token="+access_token
 	try:
-		response = urllib2.urlopen(path)
+		if data == {}:
+			response = urllib2.urlopen(path)
+		else:
+			data = urllib.urlencode(data)
+			request = urllib2.Request(path, data)
+			response = urllib2.urlopen(request)
 	except urllib2.HTTPError, err:
 		if err.code == 400:
-			print "The access_token you have specified in "+config_file_path+" is not valid. Check the README to get the correct access_token"
+			print "BAD REQUEST - Check the access_token in config or the parameters"
 			exit(1)
 		else:
+			print err
 			print "Some error occured while connecting to put.io server."
 			exit(1)
 	response_json = json.loads(response.read())
@@ -151,8 +157,36 @@ def process_command(command):
 		write_terminal_session()
 		response_json = get_folder_list(terminal_session["pwd_id"][-1])
 		dump_autocomplete(response_json["files"])
+	elif command == "transfers":
+		sub_command = sys.argv[2] if len(sys.argv) >= 3 else "show"
+		if sub_command == "show":
+			response_json = api_call("transfers/list")
+			for transfer in response_json["transfers"]:
+				if transfer["percent_done"] == 100:
+					print "("+str(transfer["percent_done"])+"%)",transfer["name"]
+				else:
+					print "("+str(transfer["percent_done"])+"% - "+str(float(transfer["down_speed"])/1024/1024)+" mb/s)",transfer["name"]
+		elif sub_command == "clear":
+			response_json = api_call("transfers/clean",{"method":"POST"})
+			if response_json["status"] == "OK":
+				print "All completed transfers cleared"
+			else:
+				print "Some error occurred while clearing the transfers"		
+		else:
+			print "Invalid sub comamnd : "+sub_command+". Please check usage using put transfers --help"
+	elif command == "add":
+		if len(sys.argv) < 3:
+			print "Missing url. Please check usage using put add --help"
+			exit(1)
+		add_url = sys.argv[2]
+		parameters = {"url":add_url, "save_parent_id":terminal_session["pwd_id"][-1]}
+		response_json = api_call("transfers/add",parameters)
+		if response_json["status"] == "OK":
+			print "Successfully added download link to pwd. Please check transfers"
+		else:
+			print "Error while addying transfer : "+response_json["transfer"]["error_message"]
 	else:
-		print "Invalid command : "+command+". Please check usage using --help"
+		print "Invalid command : "+command+". Please check usage using put --help"
 
 def main_routine():
 	check_config()
