@@ -14,3 +14,4 @@ ifeq ($(BUILD_CONFIG),TRUE)
 	@cp config/put-cli.json ~/.put-cli/
 endif
 	@sudo cp autocomplete_script $(AUTOCOMPLETE_TARGET)
+	@cp commands.txt ~/.put-cli/autocomplete/
