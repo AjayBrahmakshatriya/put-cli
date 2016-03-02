@@ -98,7 +98,7 @@ def dump_autocomplete(files):
 	ppid = os.getppid()
 	autocomplete_file = open(autocomplete_path+str(ppid),"w")
 	for file_info in files:
-		autocomplete_file.write(escape_filename(file_info["name"])+"\n")
+		autocomplete_file.write(escape_filename(file_info["name"]) + "\t" + str(file_info["file_type"]) + "\n")
 	autocomplete_file.close()
 
 def get_folder_list(folder_id):
