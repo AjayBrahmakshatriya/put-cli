@@ -136,7 +136,10 @@ def process_command(command):
 				print "[+]"+file_info["name"]
 			else:
 				print file_info["name"]
-		dump_autocomplete(files)
+
+		#if current folder, refresh the folder listing for autocomplete
+		if ls_target_id == terminal_session["pwd_id"][-1]:
+			dump_autocomplete(files)
 	elif command == "cd":
 		cd_target = sys.argv[2] if len(sys.argv) >= 3 else '/'
 		if cd_target == "..":
@@ -171,7 +174,7 @@ def process_command(command):
 			if response_json["status"] == "OK":
 				print "All completed transfers cleared"
 			else:
-				print "Some error occurred while clearing the transfers"		
+				print "Some error occurred while clearing the transfers"
 		else:
 			print "Invalid sub comamnd : "+sub_command+". Please check usage using put transfers --help"
 	elif command == "add":
