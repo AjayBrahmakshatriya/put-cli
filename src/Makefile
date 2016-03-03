@@ -14,5 +14,6 @@ ifeq ($(BUILD_CONFIG),TRUE)
 	@cp config/put-cli.json ~/.put-cli/
 endif
 	@sudo cp autocomplete_script $(AUTOCOMPLETE_TARGET)
+	@mkdir -p ~/.put-cli/autocomplete/
 	@cp autocomplete ~/.put-cli/autocomplete/
 	@chmod +x ~/.put-cli/autocomplete/autocomplete
