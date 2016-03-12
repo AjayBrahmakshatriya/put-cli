@@ -30,6 +30,11 @@ commands = {
 	}
 }
 
+default = {
+	'folders': True,
+	'files': True
+}
+
 pid = sys.argv[1]
 comp_cword = int(sys.argv[2])
 comp_words = sys.argv[3:]
@@ -40,7 +45,8 @@ for i in range(comp_cword):
 	if 'commands' in current and word in current['commands']:
 		current = current['commands'][word]
 	else:
-		sys.exit(0)
+		current = default
+		break
 
 if current is not None:
 	if 'commands' in current:
