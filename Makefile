@@ -23,6 +23,7 @@ uninstall:
 	@sudo rm -f $(TARGET)
 	@sudo rm -f $(AUTOCOMPLETE_TARGET)
 	@rm -f ~/.put-cli/autocomplete/autocomplete
+	@rm -f ~/.put-cli/autocomplete
 
 clean:
 	@rm -rf build
