@@ -5,6 +5,7 @@ import os.path
 import sys
 import urllib2
 import urllib
+import time
 config_file_path = os.path.expanduser("~/.put-cli/put-cli.json")
 sessions_path = os.path.expanduser("~/.put-cli/sessions/")
 autocomplete_path = os.path.expanduser("~/.put-cli/autocomplete/")
@@ -98,7 +99,7 @@ def dump_autocomplete(files):
 	ppid = os.getppid()
 	autocomplete_file = open(autocomplete_path+str(ppid),"w")
 	for file_info in files:
-		autocomplete_file.write(escape_filename(file_info["name"]) + "\t" + str(file_info["file_type"]) + "\n")
+		autocomplete_file.write((escape_filename(file_info["name"]) + "\t" + str(file_info["file_type"]) + "\n").encode('utf-8'))
 	autocomplete_file.close()
 
 def get_folder_list(folder_id):
@@ -188,9 +189,35 @@ def process_command(command):
 			print "Successfully added download link to pwd. Please check transfers"
 		else:
 			print "Error while addying transfer : "+response_json["transfer"]["error_message"]
+	elif command == "save":
+		if len(sys.argv) < 3:
+			print "Missing file name. Please check usage using put save --help"
+			exit(1)
+		file_name = sys.argv[2]
+		response_json = get_folder_list(terminal_session["pwd_id"][-1])
+                files = response_json["files"]
+		file_id = -1
+                for file_info in files:
+                        if file_info["name"]==file_name:
+                                file_id = file_info["id"]
+				break
+		if file_id == -1:
+			print "The file does not exit in the pwd. Check your filename"
+			exit(1)
+		response_json = api_call("files/zip?file_ids="+str(file_id))
+		zip_id = response_json["zip_id"]
+		print zip_id
+		while 1:
+			response_json = api_call("zips/"+str(zip_id))
+			if "url" in response_json:
+				break
+			time.sleep(1)
+		os.system("wget -O ~/.put-cli/file_cache/"+str(os.getppid())+".zip \""+response_json["url"]+"\"")
+		os.system("unzip ~/.put-cli/file_cache/"+str(os.getppid())+".zip")
+		os.system("rm -f ~/.put-cli/file_cache/"+str(os.getppid())+".zip")
 	else:
 		print "Invalid command : "+command+". Please check usage using put --help"
-
+	
 def main_routine():
 	check_config()
 	check_terminal_session()

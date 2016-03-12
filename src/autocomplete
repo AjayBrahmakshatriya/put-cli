@@ -20,7 +20,11 @@ commands = {
 						'clear': None
 					}
 				},
-				'add': None
+				'add': None,
+				'save': {
+					'folders': True,
+					'files': True
+				}
 			}
 		}
 	}

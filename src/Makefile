@@ -6,6 +6,7 @@ all:
 	@chmod +x ../build/put
 	@chmod +x ../build/autocomplete
 	@mkdir -p ~/.put-cli
+	@mkdir -p ~/.put-cli/file_cache
 ifeq ($(BUILD_CONFIG),TRUE)
 	@cp config/put-cli.json ~/.put-cli/
 endif
