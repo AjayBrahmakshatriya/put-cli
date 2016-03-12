@@ -90,16 +90,11 @@ def api_call(path,data={}):
 			exit(1)
 	return response_json
 
-def escape_filename(filename):
-	for c in "\!\"$&'()*,:;<=>?@[]^`{|} ":
-		filename=filename.replace(c,"\\\\"+c)
-	return filename
-
 def dump_autocomplete(files):
 	ppid = os.getppid()
 	autocomplete_file = open(autocomplete_path+str(ppid),"w")
 	for file_info in files:
-		autocomplete_file.write((escape_filename(file_info["name"]) + "\t" + str(file_info["file_type"]) + "\n").encode('utf-8'))
+		autocomplete_file.write((file_info["name"] + "\t" + str(file_info["file_type"]) + "\n").encode('utf-8'))
 	autocomplete_file.close()
 
 def get_folder_list(folder_id):

@@ -7,4 +7,4 @@ _put_cli()
 	COMPREPLY=($(compgen -W "$(~/.put-cli/autocomplete/autocomplete $pid $COMP_CWORD ${COMP_WORDS[@]})" -- ${cur}))
 	return 0
 }
-complete -F _put_cli put
+complete -o filenames -F _put_cli put
