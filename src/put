@@ -9,11 +9,11 @@ import time
 config_file_path = os.path.expanduser("~/.put-cli/put-cli.json")
 sessions_path = os.path.expanduser("~/.put-cli/sessions/")
 autocomplete_path = os.path.expanduser("~/.put-cli/autocomplete/")
-access_token = ""
+config_json = {}
 terminal_session={}
 
 def check_config():
-	global access_token
+	global config_json
 	if not os.path.exists(config_file_path):
 		print "Your config file does not exist. You might want to build and install the package again"
 		exit(1)
@@ -24,7 +24,6 @@ def check_config():
 	if not "access_token" in config_json or config_json["access_token"] == "":
 		print "Your config file doesn not have a access_token set. Please follow instructions in README and get a valid access token"
 		exit(1)
-	access_token = config_json["access_token"]
 
 def create_terminal_session(ppid):
 	global terminal_session
@@ -64,10 +63,9 @@ def check_autocomplete():
 	ppid = os.getppid()
 
 def api_call(path,data={}):
-	global access_token
 	if "?" not in path:
 		path = path+"?"
-	path = "https://api.put.io/v2/"+path+"&oauth_token="+access_token
+	path = "https://api.put.io/v2/"+path+"&oauth_token="+config_json["access_token"]
 	try:
 		if data == {}:
 			response = urllib2.urlopen(path)
