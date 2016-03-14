@@ -1,4 +1,4 @@
 {
 	"access_token": "<access-token-here>",
-	"downloader": "wget -O $1$2 \"$3\""
+	"downloader": "wget -O $1/$2 \"$3\""
 }

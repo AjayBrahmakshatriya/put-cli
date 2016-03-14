@@ -192,17 +192,21 @@ def process_command(command):
 		if len(sys.argv) < 3:
 			print "Missing file name. Please check usage using put save --help"
 			exit(1)
-		file_name = sys.argv[2]
+		file_names = list(set(sys.argv[2:]))
 		response_json = get_folder_list(terminal_session["pwd_id"][-1])
 		files = response_json["files"]
-		file_id = -1
+		file_id = ""
+		file_counter = 0
 		for file_info in files:
-			if file_info["name"]==file_name:
-				file_id = file_info["id"]
+			if file_info["name"] in file_names:
+				file_counter +=1
+				file_id += str(file_info["id"])+","
+			if file_counter == len(file_names):
 				break
-		if file_id == -1:
-			print "The file does not exit in the pwd. Check your filename"
+		if file_counter < len(file_names):
+			print "Some files you entered do not exit in the pwd. Check your filenames"
 			exit(1)
+		file_id = file_id[:-1]
 		response_json = api_call("files/zip?file_ids="+str(file_id))
 		zip_id = response_json["zip_id"]
 		print zip_id
@@ -211,7 +215,6 @@ def process_command(command):
 			if "url" in response_json:
 				break
 			time.sleep(1)
-
 		filename = str(os.getppid()) + ".zip"
 		download_command = config_json["downloader"].replace("$1", cache_folder).replace("$2", filename).replace("$3", response_json["url"])
 
