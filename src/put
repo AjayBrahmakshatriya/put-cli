@@ -183,6 +183,12 @@ def process_command(command):
 		else:
 			print "Error while addying transfer : "+response_json["transfer"]["error_message"]
 	elif command == "save":
+		if "downloader" not in config_json or "$1" not in config_json["downloader"] or "$2" not in config_json["downloader"]:
+			print "Your config file has no or invalid downloader"
+			exit(1)
+
+		cache_folder = "~/.put-cli/file_cache"	#TODO move this to config file
+
 		if len(sys.argv) < 3:
 			print "Missing file name. Please check usage using put save --help"
 			exit(1)
@@ -205,9 +211,13 @@ def process_command(command):
 			if "url" in response_json:
 				break
 			time.sleep(1)
-		os.system("wget -O ~/.put-cli/file_cache/"+str(os.getppid())+".zip \""+response_json["url"]+"\"")
-		os.system("unzip ~/.put-cli/file_cache/"+str(os.getppid())+".zip")
-		os.system("rm -f ~/.put-cli/file_cache/"+str(os.getppid())+".zip")
+
+		filename = str(os.getppid()) + ".zip"
+		download_command = config_json["downloader"].replace("$1", cache_folder).replace("$2", filename).replace("$3", response_json["url"])
+
+		os.system(download_command)
+		os.system("unzip " + cache_folder + "/" + filename)
+		os.system("rm -f " + cache_folder + "/" + filename)
 	else:
 		print "Invalid command : "+command+". Please check usage using put --help"
 
