@@ -213,7 +213,8 @@ def process_command(command):
 		while 1:
 			response_json = api_call("zips/"+str(zip_id))
 			if "url" in response_json:
-				break
+				if response_json["url"]!=False:
+					break
 			time.sleep(1)
 		filename = str(os.getppid()) + ".zip"
 		download_command = config_json["downloader"].replace("$1", cache_folder).replace("$2", filename).replace("$3", response_json["url"])
