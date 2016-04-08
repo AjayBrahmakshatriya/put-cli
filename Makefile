@@ -19,6 +19,7 @@ install:
 	@mkdir -p ~/.put-cli/autocomplete/
 	@rm -f ~/.put-cli/autocomplete/autocomplete
 	@ln -s $(ROOT_DIR)/build/autocomplete ~/.put-cli/autocomplete/autocomplete
+	@echo "Install completed! Please restart the terminals for full functionality"
 uninstall:
 	@sudo rm -f $(TARGET)
 	@sudo rm -f $(AUTOCOMPLETE_TARGET)
