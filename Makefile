@@ -17,13 +17,13 @@ install:
 	@sudo rm -f $(AUTOCOMPLETE_TARGET)/put
 	@sudo ln -s $(ROOT_DIR)/build/autocomplete_script $(AUTOCOMPLETE_TARGET)/put
 	@mkdir -p ~/.put-cli/autocomplete/
-	@rm -f $(AUTOCOMPLETE_TARGET)/helpers/put.py
-	@ln -s $(ROOT_DIR)/build/autocomplete $(AUTOCOMPLETE_TARGET)/helpers/put.py
+	@rm -f $(AUTOCOMPLETE_TARGET)/helpers/put
+	@ln -s $(ROOT_DIR)/build/autocomplete $(AUTOCOMPLETE_TARGET)/helpers/put
 	@echo "Install completed! Please restart the terminals for full functionality"
 uninstall:
 	@sudo rm -f $(TARGET)
 	@sudo rm -f $(AUTOCOMPLETE_TARGET)/put
-	@sudo rm -f $(AUTOCOMPLETE_TARGET)/helpers/put.py
+	@sudo rm -f $(AUTOCOMPLETE_TARGET)/helpers/put
 
 clean:
 	@rm -rf build

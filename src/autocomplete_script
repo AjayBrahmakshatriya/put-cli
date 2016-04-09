@@ -5,7 +5,7 @@ _put_cli()
 	local IFS=$'\n'
 	pid=$$
 	cur="${COMP_WORDS[COMP_CWORD]}"
-	COMPREPLY=($(compgen -W "$(python $DIR/helpers/put.py $pid $COMP_CWORD ${COMP_WORDS[@]})" -- ${cur}))
+	COMPREPLY=($(compgen -W "$($DIR/helpers/put $pid $COMP_CWORD ${COMP_WORDS[@]})" -- ${cur}))
 	return 0
 }
 complete -o filenames -F _put_cli put
