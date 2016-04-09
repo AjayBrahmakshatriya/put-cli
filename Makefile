@@ -3,7 +3,7 @@ BUILD_CONFIG := FALSE
 TARGET := /usr/local/bin/put
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
-        AUTOCOMPLETE_TARGET := $(shell brew --prefix)/etc/bash_completion.d/put
+        AUTOCOMPLETE_TARGET := /usr/local/etc/bash_completion.d/put
 else ifeq ($(OS),Linux)
         AUTOCOMPLETE_TARGET := /etc/bash_completion.d/put
 endif
