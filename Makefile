@@ -1,5 +1,5 @@
 ROOT_DIR := `pwd`
-BUILD_CONFIG := TRUE
+BUILD_CONFIG := FALSE
 TARGET := /usr/local/bin/put
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
@@ -23,8 +23,7 @@ install:
 uninstall:
 	@sudo rm -f $(TARGET)
 	@sudo rm -f $(AUTOCOMPLETE_TARGET)
-	@rm -f ~/.put-cli/autocomplete/autocomplete
-	@rm -f ~/.put-cli/autocomplete
+	@rm -rf ~/.put-cli/autocomplete
 
 clean:
 	@rm -rf build
