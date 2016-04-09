@@ -38,7 +38,7 @@ put <command> [argument [argument [...]]]
 
 The following commands are available currently:
 
-Command | Description |
+| Command | Description |
 | --- | --- |
 | `put pwd` | Prints the present working remote directory. |
 | `put ls [directory]` | Lists the contents of the given remote directory (or the present working remote directory if not specified). |
