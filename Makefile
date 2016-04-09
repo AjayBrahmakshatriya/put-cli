@@ -3,9 +3,9 @@ BUILD_CONFIG := FALSE
 TARGET := /usr/local/bin/put
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
-        AUTOCOMPLETE_TARGET := /usr/local/etc/bash_completion.d/put
+        AUTOCOMPLETE_TARGET := /usr/local/etc/bash_completion.d
 else ifeq ($(OS),Linux)
-        AUTOCOMPLETE_TARGET := /etc/bash_completion.d/put
+        AUTOCOMPLETE_TARGET := /etc/bash_completion.d
 endif
 
 all:
@@ -14,16 +14,16 @@ all:
 install:
 	@sudo rm -f $(TARGET)
 	@sudo ln -s $(ROOT_DIR)/build/put $(TARGET)
-	@sudo rm -f $(AUTOCOMPLETE_TARGET)
-	@sudo ln -s $(ROOT_DIR)/build/autocomplete_script $(AUTOCOMPLETE_TARGET)
+	@sudo rm -f $(AUTOCOMPLETE_TARGET)/put
+	@sudo ln -s $(ROOT_DIR)/build/autocomplete_script $(AUTOCOMPLETE_TARGET)/put
 	@mkdir -p ~/.put-cli/autocomplete/
-	@rm -f ~/.put-cli/autocomplete/autocomplete
-	@ln -s $(ROOT_DIR)/build/autocomplete ~/.put-cli/autocomplete/autocomplete
+	@rm -f $(AUTOCOMPLETE_TARGET)/helpers/put.py
+	@ln -s $(ROOT_DIR)/build/autocomplete $(AUTOCOMPLETE_TARGET)/helpers/put.py
 	@echo "Install completed! Please restart the terminals for full functionality"
 uninstall:
 	@sudo rm -f $(TARGET)
-	@sudo rm -f $(AUTOCOMPLETE_TARGET)
-	@rm -rf ~/.put-cli/autocomplete
+	@sudo rm -f $(AUTOCOMPLETE_TARGET)/put
+	@sudo rm -f $(AUTOCOMPLETE_TARGET)/helpers/put.py
 
 clean:
 	@rm -rf build
