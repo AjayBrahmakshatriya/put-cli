@@ -2,9 +2,28 @@
 A command line interface for [put.io](https://put.io).
 
 ## Installation
-Run the following to install **put-cli**
+
+### Homebrew
+If you use **homebrew**, type the following to install the latest release of **put-cli**.
 
 ```bash
+brew tap agamagarwal/tap
+brew install put-cli
+```
+
+Your **put-cli** installation will be automatically updated to the latest release when you run the following:
+
+```bash
+brew update
+brew upgrade
+```
+
+### Directly
+If you want to install the latest version directly from the **put-cli** repository, run the following:
+
+```bash
+git clone https://github.com/AjayBrahmakshatriya/put-cli.git
+cd put-cli
 make
 make install
 ```
