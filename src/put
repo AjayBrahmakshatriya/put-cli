@@ -230,7 +230,7 @@ def main_routine():
 	check_terminal_session()
 	check_autocomplete()
 	if len(sys.argv) < 2:
-		print "Please specify command:"
+		print "Please specify command. Usage: put <command> [arguments]"
 		exit(0)
 	command = sys.argv[1]
 	process_command(command)
