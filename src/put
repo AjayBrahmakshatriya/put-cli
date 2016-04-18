@@ -204,7 +204,7 @@ def process_command(command):
 			if file_counter == len(file_names):
 				break
 		if file_counter < len(file_names):
-			print "Some files you entered do not exit in the pwd. Check your filenames"
+			print "Some files you entered do not exist in the pwd. Check your filenames"
 			exit(1)
 		file_id = file_id[:-1]
 		response_json = api_call("files/zip?file_ids="+str(file_id))
@@ -220,7 +220,7 @@ def process_command(command):
 		download_command = config_json["downloader"].replace("$1", cache_folder).replace("$2", filename).replace("$3", response_json["url"])
 		os.system(download_command)
 		os.system("unzip " + cache_folder + "/" + filename)
-		os.system("rm -f " + cache_folder + "/" + filename) 
+		os.system("rm -f " + cache_folder + "/" + filename)
 	elif command == "rm":
 		if len(sys.argv) < 3:
 			print "Missing file name. Please check usage using put rm --help"
@@ -237,7 +237,7 @@ def process_command(command):
 			if file_counter == len(file_names):
 				break
 		if file_counter < len(file_names):
-			print "Some files you entered do not exit in the pwd. Check your filenames"
+			print "Some files you entered do not exist in the pwd. Check your filenames"
 			exit(1)
 		file_id = file_id[:-1]
 		response_json = api_call("files/delete",{"file_ids":str(file_id)})
