@@ -24,6 +24,10 @@ commands = {
 				'save': {
 					'folders': True,
 					'files': True
+				},
+				'rm': {
+					'folders': True,
+					'files': True
 				}
 			}
 		}

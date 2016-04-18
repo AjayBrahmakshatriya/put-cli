@@ -1,5 +1,5 @@
 ROOT_DIR := `pwd`
-BUILD_CONFIG := FALSE
+BUILD_CONFIG := TRUE
 TARGET := /usr/local/bin/put
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
