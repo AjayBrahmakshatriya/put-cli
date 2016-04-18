@@ -47,6 +47,7 @@ The following commands are available currently:
 | `put transfers clear` | Clears the existing transfers list. |
 | `put add "<magnet_link>"` | Adds the given the magnet link to transfers. The files are cached to the present working remote directory. |
 | `put save [folder/file [folder/file [...]]]` | Downloads all the given remote folders/files to present working system directory. |
+| `put rm [folder/file [folder/file [...]]]` | Deletes the given remote folders/files from the remote system. |
 
 ## Config
 
