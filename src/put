@@ -6,6 +6,7 @@ import sys
 import urllib2
 import urllib
 import time
+from arghandler import *
 config_file_path = os.path.expanduser("~/.put-cli/put-cli.json")
 sessions_path = os.path.expanduser("~/.put-cli/sessions/")
 autocomplete_path = os.path.expanduser("~/.put-cli/autocomplete/")
@@ -111,150 +112,199 @@ def get_folder_id(folder_name):
 
 	return folder_id
 
-def process_command(command):
-	global terminal_session
-	if command == "pwd":
-		output_string="/"
-		for path in terminal_session["pwd"]:
-			output_string+=path+"/"
-		print output_string
-	elif command == "ls":
-		ls_target_id = get_folder_id(sys.argv[2]) if len(sys.argv) >=3 else terminal_session["pwd_id"][-1]
-		if ls_target_id == -1:
+@subcmd
+def pwd(parser, context, args):
+	parser.description = "Prints the present working directory"
+	args = parser.parse_args(args)
+	output_string="/"
+	for path in terminal_session["pwd"]:
+		output_string+=path+"/"
+	print output_string
+
+@subcmd
+def ls(parser, context, args):
+	parser.description = "Lists the contents of a directory"
+	parser.add_argument(
+		"directory",
+		help="Directory whose contents are to be listed (default: %(default)s)",
+		type=str,
+		nargs='?',
+		const=1,
+		default='.'
+	)
+	args = parser.parse_args(args)
+	ls_target_id = terminal_session["pwd_id"][-1] if args.directory=='.' else get_folder_id(args.directory)
+	if ls_target_id == -1:
+		print "The folder name you entered does not exist"
+		exit(0)
+	response_json = get_folder_list(ls_target_id)
+	files = response_json["files"]
+	for file_info in files:
+		if file_info["file_type"]==0:
+			print "[+]"+file_info["name"]
+		else:
+			print file_info["name"]
+
+	#if current folder, refresh the folder listing for autocomplete
+	if ls_target_id == terminal_session["pwd_id"][-1]:
+		dump_autocomplete(files)
+
+@subcmd
+def cd(parser, context, args):
+	parser.description = "Changes the current directory"
+	parser.add_argument(
+		"directory",
+		help="Directory to navigate to (default: %(default)s)",
+		type=str,
+		nargs='?',
+		default='/',
+	)
+	args = parser.parse_args(args)
+	cd_target = args.directory
+	if cd_target == "..":
+		if terminal_session["pwd_id"][-1]==0:
+			return
+		terminal_session["pwd"]=terminal_session["pwd"][:-1]
+		terminal_session["pwd_id"]=terminal_session["pwd_id"][:-1]
+	elif cd_target == "/":
+		terminal_session["pwd"]=[]
+		terminal_session["pwd_id"]=[0]
+	else:
+		cd_target_id = get_folder_id(cd_target)
+		if cd_target_id == -1:
 			print "The folder name you entered does not exist"
 			exit(0)
-		response_json = get_folder_list(ls_target_id)
-		files = response_json["files"]
-		for file_info in files:
-			if file_info["file_type"]==0:
-				print "[+]"+file_info["name"]
-			else:
-				print file_info["name"]
+		terminal_session["pwd"]=terminal_session["pwd"]+[cd_target]
+		terminal_session["pwd_id"]=terminal_session["pwd_id"]+[cd_target_id]
+	write_terminal_session()
+	response_json = get_folder_list(terminal_session["pwd_id"][-1])
+	dump_autocomplete(response_json["files"])
 
-		#if current folder, refresh the folder listing for autocomplete
-		if ls_target_id == terminal_session["pwd_id"][-1]:
-			dump_autocomplete(files)
-	elif command == "cd":
-		cd_target = sys.argv[2] if len(sys.argv) >= 3 else '/'
-		if cd_target == "..":
-			if terminal_session["pwd_id"][-1]==0:
-				return
-			terminal_session["pwd"]=terminal_session["pwd"][:-1]
-			terminal_session["pwd_id"]=terminal_session["pwd_id"][:-1]
-		elif cd_target == "/":
-			terminal_session["pwd"]=[]
-			terminal_session["pwd_id"]=[0]
-		else:
-			cd_target_id = get_folder_id(cd_target)
-			if cd_target_id == -1:
-				print "The folder name you entered does not exist"
-				exit(0)
-			terminal_session["pwd"]=terminal_session["pwd"]+[cd_target]
-			terminal_session["pwd_id"]=terminal_session["pwd_id"]+[cd_target_id]
-		write_terminal_session()
-		response_json = get_folder_list(terminal_session["pwd_id"][-1])
-		dump_autocomplete(response_json["files"])
-	elif command == "transfers":
-		sub_command = sys.argv[2] if len(sys.argv) >= 3 else "show"
-		if sub_command == "show":
-			response_json = api_call("transfers/list")
-			for transfer in response_json["transfers"]:
-				if transfer["percent_done"] == 100:
-					print "("+str(transfer["percent_done"])+"%)",transfer["name"]
-				else:
-					print "("+str(transfer["percent_done"])+"% - "+str(float(transfer["down_speed"])/1024/1024)+" mb/s)",transfer["name"]
-		elif sub_command == "clear":
-			response_json = api_call("transfers/clean",{"method":"POST"})
-			if response_json["status"] == "OK":
-				print "All completed transfers cleared"
-			else:
-				print "Some error occurred while clearing the transfers"
-		else:
-			print "Invalid sub comamnd : "+sub_command+". Please check usage using put transfers --help"
-	elif command == "add":
-		if len(sys.argv) < 3:
-			print "Missing url. Please check usage using put add --help"
-			exit(1)
-		add_url = sys.argv[2]
-		parameters = {"url":add_url, "save_parent_id":terminal_session["pwd_id"][-1]}
-		response_json = api_call("transfers/add",parameters)
+@subcmd
+def transfers(parser, context, args):
+	parser.description = "Displays/clears the current transfers"
+	parser.add_argument(
+		"-c", "--clear",
+		action="store_true",
+		help="Clears the current transfers",
+	)
+	args = parser.parse_args(args)
+	if args.clear:
+		response_json = api_call("transfers/clean",{"method":"POST"})
 		if response_json["status"] == "OK":
-			print "Successfully added download link to pwd. Please check transfers"
+			print "All completed transfers cleared"
 		else:
-			print "Error while addying transfer : "+response_json["transfer"]["error_message"]
-	elif command == "save":
-		if "downloader" not in config_json or "$1" not in config_json["downloader"] or "$2" not in config_json["downloader"]:
-			print "Your config file has no or invalid downloader"
-			exit(1)
-
-		cache_folder = "~/.put-cli/file_cache"	#TODO move this to config file
-
-		if len(sys.argv) < 3:
-			print "Missing file name. Please check usage using put save --help"
-			exit(1)
-		file_names = list(set(sys.argv[2:]))
-		response_json = get_folder_list(terminal_session["pwd_id"][-1])
-		files = response_json["files"]
-		file_id = ""
-		file_counter = 0
-		for file_info in files:
-			if file_info["name"] in file_names:
-				file_counter +=1
-				file_id += str(file_info["id"])+","
-			if file_counter == len(file_names):
-				break
-		if file_counter < len(file_names):
-			print "Some files you entered do not exist in the pwd. Check your filenames"
-			exit(1)
-		file_id = file_id[:-1]
-		response_json = api_call("files/zip?file_ids="+str(file_id))
-		zip_id = response_json["zip_id"]
-		print zip_id
-		while 1:
-			response_json = api_call("zips/"+str(zip_id))
-			if "url" in response_json:
-				if response_json["url"]!=False:
-					break
-			time.sleep(1)
-		filename = str(os.getppid()) + ".zip"
-		download_command = config_json["downloader"].replace("$1", cache_folder).replace("$2", filename).replace("$3", response_json["url"])
-		os.system(download_command)
-		os.system("unzip " + cache_folder + "/" + filename)
-		os.system("rm -f " + cache_folder + "/" + filename)
-	elif command == "rm":
-		if len(sys.argv) < 3:
-			print "Missing file name. Please check usage using put rm --help"
-			exit(1)
-		file_names = list(set(sys.argv[2:]))
-		response_json = get_folder_list(terminal_session["pwd_id"][-1])
-		files = response_json["files"]
-		file_id = ""
-		file_counter = 0
-		for file_info in files:
-			if file_info["name"] in file_names:
-				file_counter +=1
-				file_id += str(file_info["id"])+","
-			if file_counter == len(file_names):
-				break
-		if file_counter < len(file_names):
-			print "Some files you entered do not exist in the pwd. Check your filenames"
-			exit(1)
-		file_id = file_id[:-1]
-		response_json = api_call("files/delete",{"file_ids":str(file_id)})
-		response_json = get_folder_list(terminal_session["pwd_id"][-1])
-		dump_autocomplete(response_json["files"])
+			print "Some error occurred while clearing the transfers"
 	else:
-		print "Invalid command : "+command+". Please check usage using put --help"
+		response_json = api_call("transfers/list")
+		for transfer in response_json["transfers"]:
+			if transfer["percent_done"] == 100:
+				print "("+str(transfer["percent_done"])+"%)",transfer["name"]
+			else:
+				print "("+str(transfer["percent_done"])+"% - "+str(float(transfer["down_speed"])/1024/1024)+" mb/s)",transfer["name"]
+
+@subcmd
+def add(parser, context, args):
+	parser.description = "Add a new transfer"
+	parser.add_argument(
+		"magnet",
+		help="Magnet link to be added",
+		type=str,
+	)
+
+	args = parser.parse_args(args)
+	add_url = args.magnet
+	parameters = {"url":add_url, "save_parent_id":terminal_session["pwd_id"][-1]}
+	response_json = api_call("transfers/add",parameters)
+	if response_json["status"] == "OK":
+		print "Successfully added download link to pwd. Please check transfers"
+	else:
+		print "Error while adding transfer : "+response_json["transfer"]["error_message"]
+
+@subcmd
+def save(parser, context, args):
+	parser.description = "Save the given files/folders on the local machine"
+	parser.add_argument(
+		"files",
+		help="Files/folders to save",
+		type=str,
+		nargs="+"
+	)
+
+	args = parser.parse_args(args)
+
+	if "downloader" not in config_json or "$1" not in config_json["downloader"] or "$2" not in config_json["downloader"]:
+		print "Your config file has no or invalid downloader"
+		exit(1)
+
+	cache_folder = "~/.put-cli/file_cache"	#TODO move this to config file
+
+	file_names = list(set(args.files))
+	response_json = get_folder_list(terminal_session["pwd_id"][-1])
+	files = response_json["files"]
+	file_id = ""
+	file_counter = 0
+	for file_info in files:
+		if file_info["name"] in file_names:
+			file_counter +=1
+			file_id += str(file_info["id"])+","
+		if file_counter == len(file_names):
+			break
+	if file_counter < len(file_names):
+		print "Some files you entered do not exist in the pwd. Check your filenames"
+		exit(1)
+	file_id = file_id[:-1]
+	response_json = api_call("files/zip?file_ids="+str(file_id))
+	zip_id = response_json["zip_id"]
+	print zip_id
+	while 1:
+		response_json = api_call("zips/"+str(zip_id))
+		if "url" in response_json:
+			if response_json["url"]!=False:
+				break
+		time.sleep(1)
+	filename = str(os.getppid()) + ".zip"
+	download_command = config_json["downloader"].replace("$1", cache_folder).replace("$2", filename).replace("$3", response_json["url"])
+	os.system(download_command)
+	os.system("unzip " + cache_folder + "/" + filename)
+	os.system("rm -f " + cache_folder + "/" + filename)
+
+@subcmd
+def rm(parser, context, args):
+	parser.description = "Deletes the given files/folders from the remote machine"
+	parser.add_argument(
+		"files",
+		help="Files/folders to delete",
+		type=str,
+		nargs="+"
+	)
+
+	args = parser.parse_args(args)
+	file_names = list(set(args.files))
+	response_json = get_folder_list(terminal_session["pwd_id"][-1])
+	files = response_json["files"]
+	file_id = ""
+	file_counter = 0
+	for file_info in files:
+		if file_info["name"] in file_names:
+			file_counter +=1
+			file_id += str(file_info["id"])+","
+		if file_counter == len(file_names):
+			break
+	if file_counter < len(file_names):
+		print "Some files you entered do not exist in the pwd. Check your filenames"
+		exit(1)
+	file_id = file_id[:-1]
+	response_json = api_call("files/delete",{"file_ids":str(file_id)})
+	response_json = get_folder_list(terminal_session["pwd_id"][-1])
+	dump_autocomplete(response_json["files"])
 
 def main_routine():
 	check_config()
 	check_terminal_session()
 	check_autocomplete()
-	if len(sys.argv) < 2:
-		print "Please specify command. Usage: put <command> [arguments]"
-		exit(0)
-	command = sys.argv[1]
-	process_command(command)
+	handler = ArgumentHandler(description = "A command line interface for put.io")
+	handler.run()
 
 if __name__ == "__main__" :
 	main_routine()

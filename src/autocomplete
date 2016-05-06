@@ -14,12 +14,7 @@ commands = {
 				'cd': {
 					'folders': True
 				},
-				'transfers': {
-					'commands': {
-						'show': None,
-						'clear': None
-					}
-				},
+				'transfers': None,
 				'add': None,
 				'save': {
 					'folders': True,
