@@ -43,11 +43,10 @@ The following commands are available currently:
 | `put pwd` | Prints the present working remote directory. |
 | `put ls [directory]` | Lists the contents of the given remote directory (or the present working remote directory if not specified). |
 | `put cd [directory]` | Changes the present working remote directory to the given remote directory (or the remote root if not specified). |
-| `put transfers show` | Lists the existing transfers. |
-| `put transfers clear` | Clears the existing transfers list. |
+| `put transfers [--clear]` | Lists/clears the existing transfers. |
 | `put add "<magnet_link>"` | Adds the given the magnet link to transfers. The files are cached to the present working remote directory. |
-| `put save [folder/file [folder/file [...]]]` | Downloads all the given remote folders/files to present working system directory. |
-| `put rm [folder/file [folder/file [...]]]` | Deletes the given remote folders/files from the remote system. |
+| `put save folder/file [folder/file ...]` | Downloads all the given remote folders/files to present working system directory. |
+| `put rm folder/file [folder/file ...]` | Deletes the given remote folders/files from the remote system. |
 
 ## Config
 
