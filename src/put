@@ -140,7 +140,7 @@ def ls(parser, context, args):
 	response_json = get_folder_list(ls_target_id)
 	files = response_json["files"]
 	for file_info in files:
-		if file_info["file_type"]==0:
+		if file_info["file_type"]=="FOLDER":
 			print "[+]"+file_info["name"]
 		else:
 			print file_info["name"]
