@@ -13,6 +13,16 @@ autocomplete_path = os.path.expanduser("~/.put-cli/autocomplete/")
 config_json = {}
 terminal_session={}
 
+command_descriptions = {
+	"pwd": "Prints the present working directory",
+	"ls": "Lists the contents of a directory",
+	"cd": "Changes the current directory",
+	"transfers": "Displays/clears the current transfers",
+	"add": "Add a new transfer",
+	"save": "Save the given files/folders on the local machine",
+	"rm": "Deletes the given files/folders from the remote machine",
+}
+
 def check_config():
 	global config_json
 	if not os.path.exists(config_file_path):
@@ -112,18 +122,18 @@ def get_folder_id(folder_name):
 
 	return folder_id
 
-@subcmd
+@subcmd(help = command_descriptions["pwd"])
 def pwd(parser, context, args):
-	parser.description = "Prints the present working directory"
+	parser.description = command_descriptions["pwd"]
 	args = parser.parse_args(args)
 	output_string="/"
 	for path in terminal_session["pwd"]:
 		output_string+=path+"/"
 	print output_string
 
-@subcmd
+@subcmd(help = command_descriptions["ls"])
 def ls(parser, context, args):
-	parser.description = "Lists the contents of a directory"
+	parser.description = command_descriptions["ls"]
 	parser.add_argument(
 		"directory",
 		help="Directory whose contents are to be listed (default: %(default)s)",
@@ -149,9 +159,9 @@ def ls(parser, context, args):
 	if ls_target_id == terminal_session["pwd_id"][-1]:
 		dump_autocomplete(files)
 
-@subcmd
+@subcmd(help = command_descriptions["cd"])
 def cd(parser, context, args):
-	parser.description = "Changes the current directory"
+	parser.description = command_descriptions["cd"]
 	parser.add_argument(
 		"directory",
 		help="Directory to navigate to (default: %(default)s)",
@@ -180,9 +190,9 @@ def cd(parser, context, args):
 	response_json = get_folder_list(terminal_session["pwd_id"][-1])
 	dump_autocomplete(response_json["files"])
 
-@subcmd
+@subcmd(help = command_descriptions["transfers"])
 def transfers(parser, context, args):
-	parser.description = "Displays/clears the current transfers"
+	parser.description = command_descriptions["transfers"]
 	parser.add_argument(
 		"-c", "--clear",
 		action="store_true",
@@ -203,9 +213,9 @@ def transfers(parser, context, args):
 			else:
 				print "("+str(transfer["percent_done"])+"% - "+str(float(transfer["down_speed"])/1024/1024)+" mb/s)",transfer["name"]
 
-@subcmd
+@subcmd(help = command_descriptions["add"])
 def add(parser, context, args):
-	parser.description = "Add a new transfer"
+	parser.description = command_descriptions["add"]
 	parser.add_argument(
 		"magnet",
 		help="Magnet link to be added",
@@ -221,9 +231,9 @@ def add(parser, context, args):
 	else:
 		print "Error while adding transfer : "+response_json["transfer"]["error_message"]
 
-@subcmd
+@subcmd(help = command_descriptions["save"])
 def save(parser, context, args):
-	parser.description = "Save the given files/folders on the local machine"
+	parser.description = command_descriptions["save"]
 	parser.add_argument(
 		"files",
 		help="Files/folders to save",
@@ -269,9 +279,9 @@ def save(parser, context, args):
 	os.system("unzip " + cache_folder + "/" + filename)
 	os.system("rm -f " + cache_folder + "/" + filename)
 
-@subcmd
+@subcmd(help = command_descriptions["rm"])
 def rm(parser, context, args):
-	parser.description = "Deletes the given files/folders from the remote machine"
+	parser.description = command_descriptions["rm"]
 	parser.add_argument(
 		"files",
 		help="Files/folders to delete",
@@ -303,7 +313,7 @@ def main_routine():
 	check_config()
 	check_terminal_session()
 	check_autocomplete()
-	handler = ArgumentHandler(description = "A command line interface for put.io")
+	handler = ArgumentHandler(description = "A command line interface for put.io", use_subcommand_help = True)
 	handler.run()
 
 if __name__ == "__main__" :
