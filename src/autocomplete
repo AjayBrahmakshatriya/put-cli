@@ -59,7 +59,7 @@ if current is not None:
 			f = open(os.path.expanduser('~/.put-cli/autocomplete/' + pid), 'r')
 			for line in f:
 				name, file_type = line[:-1].split('\t')
-				if (file_type == '0' and folder_flag) or (file_type != '0' and file_flag):
+				if (file_type == 'FOLDER' and folder_flag) or (file_type != 'FOLDER' and file_flag):
 					print name
 		except Exception as e:
 			pass
