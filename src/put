@@ -2,18 +2,17 @@
 import json
 import os
 import os.path
-import sys
 import urllib2
 import urllib
 import time
-from arghandler import *
-config_file_path = os.path.expanduser("~/.put-cli/put-cli.json")
-sessions_path = os.path.expanduser("~/.put-cli/sessions/")
-autocomplete_path = os.path.expanduser("~/.put-cli/autocomplete/")
+from arghandler import ArgumentHandler, subcmd
+CONFIG_FILE_PATH = os.path.expanduser("~/.put-cli/put-cli.json")
+SESSIONS_PATH = os.path.expanduser("~/.put-cli/sessions/")
+AUTOCOMPLETE_PATH = os.path.expanduser("~/.put-cli/autocomplete/")
 config_json = {}
-terminal_session={}
+terminal_session = {}
 
-command_descriptions = {
+COMMAND_DESCRIPTIONS = {
 	"pwd": "Prints the present working directory",
 	"ls": "Lists the contents of a directory",
 	"cd": "Changes the current directory",
@@ -25,55 +24,55 @@ command_descriptions = {
 
 def check_config():
 	global config_json
-	if not os.path.exists(config_file_path):
+	if not os.path.exists(CONFIG_FILE_PATH):
 		print "Your config file does not exist. You might want to build and install the package again"
 		exit(1)
-	config_file = open(config_file_path,"r")
+	config_file = open(CONFIG_FILE_PATH, "r")
 	config_json = config_file.read()
 	config_file.close()
 	config_json = json.loads(config_json)
 	if not "access_token" in config_json or config_json["access_token"] == "":
-		print "Your config file doesn not have a access_token set. Please follow instructions in README and get a valid access token"
+		print "Your config file doesn't have an access_token set. Please follow instructions in README and get a valid access token"
 		exit(1)
 
 def create_terminal_session(ppid):
 	global terminal_session
 	terminal_session = {"pwd":[], "pwd_id":[0]}
 	terminal_session_string = json.dumps(terminal_session, sort_keys=True, indent=4, separators=(',', ': '))
-	terminal_session_file = open(sessions_path+str(ppid),"w")
+	terminal_session_file = open(SESSIONS_PATH + str(ppid), "w")
 	terminal_session_file.write(terminal_session_string)
 	terminal_session_file.close()
 
 def read_terminal_session(ppid):
 	global terminal_session
-	terminal_session_file = open(sessions_path+str(ppid),"r")
+	terminal_session_file = open(SESSIONS_PATH + str(ppid), "r")
 	terminal_session_json = terminal_session_file.read()
 	terminal_session_file.close()
 	terminal_session = json.loads(terminal_session_json)
 
 def write_terminal_session():
-	ppid=os.getppid()
-	global terminal_session
+	ppid = os.getppid()
 	terminal_session_string = json.dumps(terminal_session, sort_keys=True, indent=4, separators=(',', ': '))
-	terminal_session_file = open(sessions_path+str(ppid),"w")
+	terminal_session_file = open(SESSIONS_PATH + str(ppid), "w")
 	terminal_session_file.write(terminal_session_string)
 	terminal_session_file.close()
 
 def check_terminal_session():
-	if not os.path.exists(sessions_path):
-		os.mkdir(sessions_path)
+	if not os.path.exists(SESSIONS_PATH):
+		os.mkdir(SESSIONS_PATH)
 	ppid = os.getppid()
-	if not os.path.exists(sessions_path+str(ppid)):
+	if not os.path.exists(SESSIONS_PATH+str(ppid)):
 		create_terminal_session(ppid)
 	else:
 		read_terminal_session(ppid)
 
 def check_autocomplete():
-	if not os.path.exists(autocomplete_path):
-		os.mkdir(autocomplete_path)
-	ppid = os.getppid()
+	if not os.path.exists(AUTOCOMPLETE_PATH):
+		os.mkdir(AUTOCOMPLETE_PATH)
 
-def api_call(path,data={}):
+def api_call(path, data=None):
+	if data is None:
+		data = {}
 	if "?" not in path:
 		path = path+"?"
 	path = "https://api.put.io/v2/"+path+"&oauth_token="+config_json["access_token"]
@@ -81,8 +80,8 @@ def api_call(path,data={}):
 		if data == {}:
 			response = urllib2.urlopen(path)
 		else:
-			data = urllib.urlencode(data)
-			request = urllib2.Request(path, data)
+			encoded_data = urllib.urlencode(data)
+			request = urllib2.Request(path, encoded_data)
 			response = urllib2.urlopen(request)
 	except urllib2.HTTPError, err:
 		if err.code == 400:
@@ -95,13 +94,13 @@ def api_call(path,data={}):
 	response_json = json.loads(response.read())
 	if response_json["status"] == "ERROR":
 		if response_json["error_type"] == "invalid_grant":
-			print "The access_token you have specified in "+config_file_path+" is not valid. Check the README to get the correct access_token"
+			print "The access_token you have specified in " + CONFIG_FILE_PATH + " is not valid. Check the README to get the correct access_token"
 			exit(1)
 	return response_json
 
 def dump_autocomplete(files):
 	ppid = os.getppid()
-	autocomplete_file = open(autocomplete_path+str(ppid),"w")
+	autocomplete_file = open(AUTOCOMPLETE_PATH + str(ppid), "w")
 	for file_info in files:
 		autocomplete_file.write((file_info["name"] + "\t" + str(file_info["file_type"]) + "\n").encode('utf-8'))
 	autocomplete_file.close()
@@ -119,7 +118,7 @@ def get_folder_id(folder_name):
 		folder_name = folder_name[:-1]
 
 	for file_info in files:
-		if file_info["name"]==folder_name and file_info["file_type"]=="FOLDER":
+		if file_info["name"] == folder_name and file_info["file_type"] == "FOLDER":
 			folder_id = file_info["id"]
 			break
 
@@ -129,35 +128,29 @@ def get_file_ids(file_names):
 	response_json = get_folder_list(terminal_session["pwd_id"][-1])
 	files = response_json["files"]
 
-	file_names = set(map(
-		lambda f: f[:-1] if f.endswith('/') else f,
-		file_names
-	))
+	file_names = set(f[:-1] if f.endswith('/') else f for f in file_names)
 
-	file_ids = map(
-		lambda f: str(f["id"]),
-		filter(
-			lambda f: f["name"] in file_names,
-			files
-		))
+	file_ids = [str(f["id"]) for f in files if f["name"] in file_names]
 
 	if len(file_ids) != len(file_names):
 		raise ValueError("Some files given do not exist in the pwd")
 
 	return file_ids
 
-@subcmd(help = command_descriptions["pwd"])
+@subcmd(help=COMMAND_DESCRIPTIONS["pwd"])
 def pwd(parser, context, args):
-	parser.description = command_descriptions["pwd"]
+	del context
+	parser.description = COMMAND_DESCRIPTIONS["pwd"]
 	args = parser.parse_args(args)
-	output_string="/"
+	output_string = "/"
 	for path in terminal_session["pwd"]:
-		output_string+=path+"/"
+		output_string += path+"/"
 	print output_string
 
-@subcmd(help = command_descriptions["ls"])
+@subcmd(help=COMMAND_DESCRIPTIONS["ls"])
 def ls(parser, context, args):
-	parser.description = command_descriptions["ls"]
+	del context
+	parser.description = COMMAND_DESCRIPTIONS["ls"]
 	parser.add_argument(
 		"directory",
 		help="Directory whose contents are to be listed (default: %(default)s)",
@@ -167,15 +160,15 @@ def ls(parser, context, args):
 		default='.'
 	)
 	args = parser.parse_args(args)
-	ls_target_id = terminal_session["pwd_id"][-1] if args.directory=='.' else get_folder_id(args.directory)
+	ls_target_id = terminal_session["pwd_id"][-1] if args.directory == '.' else get_folder_id(args.directory)
 	if ls_target_id == -1:
 		print "The folder name you entered does not exist"
 		exit(0)
 	response_json = get_folder_list(ls_target_id)
 	files = response_json["files"]
 	for file_info in files:
-		if file_info["file_type"]=="FOLDER":
-			print "[+]"+file_info["name"]
+		if file_info["file_type"] == "FOLDER":
+			print "[+]" + file_info["name"]
 		else:
 			print file_info["name"]
 
@@ -183,9 +176,10 @@ def ls(parser, context, args):
 	if ls_target_id == terminal_session["pwd_id"][-1]:
 		dump_autocomplete(files)
 
-@subcmd(help = command_descriptions["cd"])
+@subcmd(help=COMMAND_DESCRIPTIONS["cd"])
 def cd(parser, context, args):
-	parser.description = command_descriptions["cd"]
+	del context
+	parser.description = COMMAND_DESCRIPTIONS["cd"]
 	parser.add_argument(
 		"directory",
 		help="Directory to navigate to (default: %(default)s)",
@@ -196,27 +190,28 @@ def cd(parser, context, args):
 	args = parser.parse_args(args)
 	cd_target = args.directory
 	if cd_target == "..":
-		if terminal_session["pwd_id"][-1]==0:
+		if terminal_session["pwd_id"][-1] == 0:
 			return
-		terminal_session["pwd"]=terminal_session["pwd"][:-1]
-		terminal_session["pwd_id"]=terminal_session["pwd_id"][:-1]
+		terminal_session["pwd"] = terminal_session["pwd"][:-1]
+		terminal_session["pwd_id"] = terminal_session["pwd_id"][:-1]
 	elif cd_target == "/":
-		terminal_session["pwd"]=[]
-		terminal_session["pwd_id"]=[0]
+		terminal_session["pwd"] = []
+		terminal_session["pwd_id"] = [0]
 	else:
 		cd_target_id = get_folder_id(cd_target)
 		if cd_target_id == -1:
 			print "The folder name you entered does not exist"
 			exit(0)
-		terminal_session["pwd"]=terminal_session["pwd"]+[cd_target]
-		terminal_session["pwd_id"]=terminal_session["pwd_id"]+[cd_target_id]
+		terminal_session["pwd"] = terminal_session["pwd"] + [cd_target]
+		terminal_session["pwd_id"] = terminal_session["pwd_id"] + [cd_target_id]
 	write_terminal_session()
 	response_json = get_folder_list(terminal_session["pwd_id"][-1])
 	dump_autocomplete(response_json["files"])
 
-@subcmd(help = command_descriptions["transfers"])
+@subcmd(help=COMMAND_DESCRIPTIONS["transfers"])
 def transfers(parser, context, args):
-	parser.description = command_descriptions["transfers"]
+	del context
+	parser.description = COMMAND_DESCRIPTIONS["transfers"]
 	parser.add_argument(
 		"-c", "--clear",
 		action="store_true",
@@ -224,7 +219,7 @@ def transfers(parser, context, args):
 	)
 	args = parser.parse_args(args)
 	if args.clear:
-		response_json = api_call("transfers/clean",{"method":"POST"})
+		response_json = api_call("transfers/clean", {"method":"POST"})
 		if response_json["status"] == "OK":
 			print "All completed transfers cleared"
 		else:
@@ -233,13 +228,14 @@ def transfers(parser, context, args):
 		response_json = api_call("transfers/list")
 		for transfer in response_json["transfers"]:
 			if transfer["percent_done"] == 100:
-				print "("+str(transfer["percent_done"])+"%)",transfer["name"]
+				print "(" + str(transfer["percent_done"]) + "%)", transfer["name"]
 			else:
-				print "("+str(transfer["percent_done"])+"% - "+str(float(transfer["down_speed"])/1024/1024)+" mb/s)",transfer["name"]
+				print "(" + str(transfer["percent_done"]) + "% - " + str(float(transfer["down_speed"])/1024/1024)+" mb/s)", transfer["name"]
 
-@subcmd(help = command_descriptions["add"])
+@subcmd(help=COMMAND_DESCRIPTIONS["add"])
 def add(parser, context, args):
-	parser.description = command_descriptions["add"]
+	del context
+	parser.description = COMMAND_DESCRIPTIONS["add"]
 	parser.add_argument(
 		"magnet",
 		help="Magnet link to be added",
@@ -249,15 +245,16 @@ def add(parser, context, args):
 	args = parser.parse_args(args)
 	add_url = args.magnet
 	parameters = {"url":add_url, "save_parent_id":terminal_session["pwd_id"][-1]}
-	response_json = api_call("transfers/add",parameters)
+	response_json = api_call("transfers/add", parameters)
 	if response_json["status"] == "OK":
 		print "Successfully added download link to pwd. Please check transfers"
 	else:
 		print "Error while adding transfer : "+response_json["transfer"]["error_message"]
 
-@subcmd(help = command_descriptions["save"])
+@subcmd(help=COMMAND_DESCRIPTIONS["save"])
 def save(parser, context, args):
-	parser.description = command_descriptions["save"]
+	del context
+	parser.description = COMMAND_DESCRIPTIONS["save"]
 	parser.add_argument(
 		"files",
 		help="Files/folders to save",
@@ -286,7 +283,7 @@ def save(parser, context, args):
 	while 1:
 		response_json = api_call("zips/"+str(zip_id))
 		if "url" in response_json:
-			if response_json["url"]!=False:
+			if response_json["url"] != False:
 				break
 		time.sleep(1)
 	filename = str(os.getppid()) + ".zip"
@@ -295,9 +292,10 @@ def save(parser, context, args):
 	os.system("unzip " + cache_folder + "/" + filename)
 	os.system("rm -f " + cache_folder + "/" + filename)
 
-@subcmd(help = command_descriptions["rm"])
+@subcmd(help=COMMAND_DESCRIPTIONS["rm"])
 def rm(parser, context, args):
-	parser.description = command_descriptions["rm"]
+	del context
+	parser.description = COMMAND_DESCRIPTIONS["rm"]
 	parser.add_argument(
 		"files",
 		help="Files/folders to delete",
@@ -313,7 +311,7 @@ def rm(parser, context, args):
 	except ValueError as e:
 		print "Error:", e.message
 		exit(1)
-	response_json = api_call("files/delete",{"file_ids": file_ids})
+	response_json = api_call("files/delete", {"file_ids": file_ids})
 	response_json = get_folder_list(terminal_session["pwd_id"][-1])
 	dump_autocomplete(response_json["files"])
 
@@ -321,8 +319,8 @@ def main_routine():
 	check_config()
 	check_terminal_session()
 	check_autocomplete()
-	handler = ArgumentHandler(description = "A command line interface for put.io", use_subcommand_help = True)
+	handler = ArgumentHandler(description="A command line interface for put.io", use_subcommand_help=True)
 	handler.run()
 
-if __name__ == "__main__" :
+if __name__ == "__main__":
 	main_routine()
