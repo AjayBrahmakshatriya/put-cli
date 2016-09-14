@@ -129,10 +129,10 @@ def get_file_ids(file_names):
 	response_json = get_folder_list(terminal_session["pwd_id"][-1])
 	files = response_json["files"]
 
-	file_names = map(
+	file_names = set(map(
 		lambda f: f[:-1] if f.endswith('/') else f,
 		file_names
-	)
+	))
 
 	file_ids = map(
 		lambda f: str(f["id"]),
@@ -273,7 +273,7 @@ def save(parser, context, args):
 
 	cache_folder = "~/.put-cli/file_cache"	#TODO move this to config file
 
-	file_names = list(set(args.files))
+	file_names = args.files
 
 	try:
 		file_ids = ','.join(get_file_ids(file_names))
@@ -306,7 +306,7 @@ def rm(parser, context, args):
 	)
 
 	args = parser.parse_args(args)
-	file_names = list(set(args.files))
+	file_names = args.files
 
 	try:
 		file_ids = ','.join(get_file_ids(file_names))
