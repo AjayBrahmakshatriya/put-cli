@@ -2,7 +2,7 @@
 import sys
 import os
 
-commands = {
+COMMANDS = {
 	'commands': {
 		'put': {
 			'commands': {
@@ -29,37 +29,42 @@ commands = {
 	}
 }
 
-default = {
+DEFAULT = {
 	'folders': True,
 	'files': True
 }
 
-pid = sys.argv[1]
-comp_cword = int(sys.argv[2])
-comp_words = sys.argv[3:]
-current = commands
+PID = sys.argv[1]
+COMP_CWORD = int(sys.argv[2])
+COMP_WORDS = sys.argv[3:]
 
-for i in range(comp_cword):
-	word = comp_words[i]
-	if 'commands' in current and word in current['commands']:
-		current = current['commands'][word]
-	else:
-		current = default
-		break
+def main():
+	current = COMMANDS
 
-if current is not None:
-	if 'commands' in current:
-		for command in current['commands']:
-			print command
+	for i in range(COMP_CWORD):
+		word = COMP_WORDS[i]
+		if 'commands' in current and word in current['commands']:
+			current = current['commands'][word]
+		else:
+			current = DEFAULT
+			break
 
-	file_flag = 'files' in current and current['files']
-	folder_flag = 'folders' in current and current['folders']
-	if file_flag or folder_flag:
-		try:
-			f = open(os.path.expanduser('~/.put-cli/autocomplete/' + pid), 'r')
-			for line in f:
-				name, file_type = line[:-1].split('\t')
-				if (file_type == 'FOLDER' and folder_flag) or (file_type != 'FOLDER' and file_flag):
-					print name
-		except Exception as e:
-			pass
+	if current is not None:
+		if 'commands' in current:
+			for command in current['commands']:
+				print command
+
+		file_flag = 'files' in current and current['files']
+		folder_flag = 'folders' in current and current['folders']
+		if file_flag or folder_flag:
+			try:
+				f = open(os.path.expanduser('~/.put-cli/autocomplete/' + PID), 'r')
+				for line in f:
+					name, file_type = line[:-1].split('\t')
+					if (file_type == 'FOLDER' and folder_flag) or (file_type != 'FOLDER' and file_flag):
+						print name
+			except (OSError, IOError):
+				pass
+
+if __name__ == '__main__':
+	main()
