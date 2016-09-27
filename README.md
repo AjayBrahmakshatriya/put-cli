@@ -7,7 +7,7 @@ A command line interface for [put.io](https://put.io).
 If you use **homebrew**, type the following to install the latest release of **put-cli**.
 
 ```bash
-brew tap agamagarwal/tap
+brew tap LordWaldomort/tap
 brew install put-cli
 ```
 
@@ -22,7 +22,7 @@ brew upgrade
 If you want to install the latest version directly from the **put-cli** repository, run the following:
 
 ```bash
-git clone https://github.com/AjayBrahmakshatriya/put-cli.git
+git clone https://github.com/LordWaldomort/put-cli.git
 cd put-cli
 make
 make install
