@@ -140,6 +140,11 @@ def get_file_ids(file_names):
 
 	return file_ids
 
+def download(filename, folder, url):
+	download_command = config_json["downloader"].replace("$1", folder).replace("$2", filename).replace("$3", url)
+	os.system(download_command)
+
+
 @subcmd(help=COMMAND_DESCRIPTIONS["pwd"])
 def pwd(parser, context, args):
 	del context
@@ -283,8 +288,7 @@ def save(parser, context, args):
 
 	if len(file_ids) == 1 and api_call("files/" + file_ids[0])["file"]["file_type"] != "FOLDER":
 		download_url = api_call("files/" + file_ids[0] + "/download", None, True)
-		download_command = config_json["downloader"].replace("$1", ".").replace("$2", file_names[0]).replace("$3", download_url)
-		os.system(download_command)
+		download(file_names[0], ".", download_url)
 	else:
 		file_ids = ','.join(file_ids)
 		response_json = api_call("zips/create", {"file_ids": file_ids})
@@ -296,9 +300,7 @@ def save(parser, context, args):
 					break
 			time.sleep(1)
 		filename = str(os.getppid()) + ".zip"
-		download_command = config_json["downloader"].replace("$1", cache_folder).replace("$2", filename).replace("$3", response_json["url"])
-		print(download_command)
-		os.system(download_command)
+		download(filename, cache_folder, response_json["url"])
 		os.system("unzip " + cache_folder + "/" + filename)
 		os.system("rm -f " + cache_folder + "/" + filename)
 
