@@ -70,12 +70,14 @@ def check_autocomplete():
 	if not os.path.exists(AUTOCOMPLETE_PATH):
 		os.mkdir(AUTOCOMPLETE_PATH)
 
-def api_call(path, data=None):
+def api_call(path, data=None, returnUrl=False):
 	if data is None:
 		data = {}
 	if "?" not in path:
 		path = path+"?"
 	path = "https://api.put.io/v2/"+path+"&oauth_token="+config_json["access_token"]
+	if returnUrl:
+		return path
 	try:
 		if data == {}:
 			response = urllib2.urlopen(path)
@@ -86,6 +88,7 @@ def api_call(path, data=None):
 	except urllib2.HTTPError, err:
 		if err.code == 400:
 			print "BAD REQUEST - Check the access_token in config or the parameters"
+			print err
 			exit(1)
 		else:
 			print err
@@ -136,6 +139,11 @@ def get_file_ids(file_names):
 		raise ValueError("Some files given do not exist in the pwd")
 
 	return file_ids
+
+def download(filename, folder, url):
+	download_command = config_json["downloader"].replace("$1", folder).replace("$2", filename).replace("$3", url)
+	os.system(download_command)
+
 
 @subcmd(help=COMMAND_DESCRIPTIONS["pwd"])
 def pwd(parser, context, args):
@@ -273,24 +281,28 @@ def save(parser, context, args):
 	file_names = args.files
 
 	try:
-		file_ids = ','.join(get_file_ids(file_names))
+		file_ids = get_file_ids(file_names)
 	except ValueError as e:
 		print "Error:", e.message
 		exit(1)
-	response_json = api_call("files/zip?file_ids=" + file_ids)
-	zip_id = response_json["zip_id"]
-	print zip_id
-	while 1:
-		response_json = api_call("zips/"+str(zip_id))
-		if "url" in response_json:
-			if response_json["url"] != False:
-				break
-		time.sleep(1)
-	filename = str(os.getppid()) + ".zip"
-	download_command = config_json["downloader"].replace("$1", cache_folder).replace("$2", filename).replace("$3", response_json["url"])
-	os.system(download_command)
-	os.system("unzip " + cache_folder + "/" + filename)
-	os.system("rm -f " + cache_folder + "/" + filename)
+
+	if len(file_ids) == 1 and api_call("files/" + file_ids[0])["file"]["file_type"] != "FOLDER":
+		download_url = api_call("files/" + file_ids[0] + "/download", None, True)
+		download(file_names[0], ".", download_url)
+	else:
+		file_ids = ','.join(file_ids)
+		response_json = api_call("zips/create", {"file_ids": file_ids})
+		zip_id = response_json["zip_id"]
+		while 1:
+			response_json = api_call("zips/"+str(zip_id))
+			if "url" in response_json:
+				if response_json["url"] != None:
+					break
+			time.sleep(1)
+		filename = str(os.getppid()) + ".zip"
+		download(filename, cache_folder, response_json["url"])
+		os.system("unzip " + cache_folder + "/" + filename)
+		os.system("rm -f " + cache_folder + "/" + filename)
 
 @subcmd(help=COMMAND_DESCRIPTIONS["rm"])
 def rm(parser, context, args):
